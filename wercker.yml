@@ -36,7 +36,6 @@ relase-gh:
 create-docker-image:
   box:
     id: ubuntu:14.04
-    cmd: /bin/sh
   steps:
     - script:
       name: set tag
@@ -52,7 +51,6 @@ create-docker-image:
         rm -rf *
 
     - internal/docker-push:
-      disable-sync: true
       username: $REGISTRY_USERNAME
       password: $REGISTRY_PASSWORD
       cmd: /app
