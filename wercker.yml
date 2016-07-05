@@ -1,0 +1,62 @@
+box:
+  id: google/golang
+dev:
+    steps:
+      - script:
+        name: cross platform build
+        code: make build
+
+      - internal/shell
+
+build:
+  steps:
+    - script:
+      name: save version
+      code: |
+        make save-version
+        echo "Software version is:"
+        cat git-info
+
+    - script:
+      name: cross platform build
+      code: |
+        make build
+        shopt -s extglob
+        cp -r scripts Makefile pkg git-info $WERCKER_OUTPUT_DIR
+
+relase-gh:
+  steps:
+    - script:
+      name: create gh-release
+      code: |
+        apt-get update
+        apt-get -y install zip
+        make release-gh VERSION=$(cat git-info)
+
+create-docker-image:
+  box:
+    id: ubuntu:14.04
+    cmd: /bin/sh
+  steps:
+    - script:
+      name: set tag
+      code: |
+        export TAG=$(cat git-info)
+        env
+    - script:
+      name: copy bin and clean up
+      code: |
+        echo $TAG
+        ls -lisa pkg
+        cp pkg/linux_386/* /app
+        rm -rf *
+
+    - internal/docker-push:
+      disable-sync: true
+      username: $REGISTRY_USERNAME
+      password: $REGISTRY_PASSWORD
+      cmd: /app
+      tag: $TAG
+    #  ports: "5000"
+      repository: $REGISTRY_REPOSITORY
+      registry: $REGISTRY_URL
